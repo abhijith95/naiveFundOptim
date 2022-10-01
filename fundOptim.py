@@ -1,3 +1,4 @@
+from unittest import result
 import pandas as pd
 import numpy as np
 from pymoo.algorithms.moo.nsga2 import NSGA2
@@ -78,10 +79,14 @@ class fundOptim:
         endCol : int (default = -2)
             index that denotes the end of column of the observation.
         """
-        self.initDataPoints(startIndex,startCol,endIndex,endCol)        
-        self.result = minimize(self.problem, self.algorithm, ("n_gen",200),
-                               verbose = True, seed = 1)
-        self.weights = self.result.X.reshape([self.n_var,1])
+        finished = False
+        while not finished:
+            self.initDataPoints(startIndex,startCol,endIndex,endCol)        
+            self.result = minimize(self.problem, self.algorithm, ("n_gen",200),
+                                verbose = True, seed = 1)
+            if self.result.X.shape[0] == self.n_var:
+                finished = True
+                self.weights = self.result.X.reshape([self.n_var,1])
 
 # fo = fundOptim(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
 # fo.optimize(0,0, endIndex=950)

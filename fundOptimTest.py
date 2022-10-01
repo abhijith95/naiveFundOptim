@@ -8,7 +8,7 @@ class fundOptimTest(fundOptim):
         fundOptim.__init__(self,fileName, sheetName)
         # rebalance period in days. Give zero for no rebalance
         self.rebalPeriod = [0,10,20,30,40,50,60,100]
-        self.reoptimPeriod = [100,200,300,500]
+        self.reoptimPeriod = [700,1000,1200]
         self.threshold = 5/100
         self.initDataPoints(0,0,-1,-1)
     
@@ -24,11 +24,6 @@ class fundOptimTest(fundOptim):
     def assetGrowthCalc(self,i):
         """
         Function that calculates the asset growth
-
-        Returns
-        -------
-        None.
-
         """
         for j in range(self.n_var):
             self.assetGrowth[j,0]=self.assetGrowth[j,0]*(1+self.wb.iloc[i,j])
@@ -40,23 +35,34 @@ class fundOptimTest(fundOptim):
         the weight is optimized and the next period the growth is monitored.
         This is then repeated until the end of observation points.
         """
+        self.gainsDict={}
+        self.portfolioValue = []
         
-        for i in range(len(self.reoptimPeriod)):
-            self.portfolioValue = []
+        for i in range(len(self.reoptimPeriod)):     
+            
             temp = 0
+            temp2={}
+            
             for j in range(0,len(self.wb),2*self.reoptimPeriod[i]):
+                
                 self.optimize(startIndex=j, endIndex=j+self.reoptimPeriod[i]-1)
                 self.assetGrowth = np.ones((self.n_var,1))
                 self.assetGrowth*=np.array(self.weights)
-                endIndx = min(len(self.wb),j+2*self.reoptimPeriod[i]-1)
+                endIndx = min(len(self.wb),j+2*self.reoptimPeriod[i])
+                
                 for k in range(j+self.reoptimPeriod[i], endIndx):
                     self.assetGrowthCalc(k)
-                temp+=np.sum(self.assetGrowth)
+                    
+                # subtracting -1 because we are interested in the gains and 
+                # not the absoulte vaue of the invested amount
+                temp+=np.sum(self.assetGrowth)-1
+                temp2[self.wb.iloc[j,-1]] = np.sum(self.assetGrowth)-1
             
+            self.gainsDict[self.reoptimPeriod[i]] = temp2
             self.portfolioValue.append(temp)
                     
         argmax = np.argmax(self.portfolioValue)
-        print("Rebalance every {} days for return of {}".format(self.reoptimPeriod[argmax],
+        print("Reoptimize every {} days for return of {}".format(self.reoptimPeriod[argmax],
                                                                 self.portfolioValue[argmax]))
         
     def test(self):
@@ -89,6 +95,8 @@ class fundOptimTest(fundOptim):
         argmax = np.argmax(self.portfolioValue)
         print("Rebalance every {} days for return of {}".format(self.rebalPeriod[argmax],
                                                                 self.portfolioValue[argmax]))
+        print(self.portfolioValue)
+        print(self.weights)
 
 test = fundOptimTest(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
-test.reOptimize()
+test.test()

@@ -11,15 +11,18 @@ class fundOptimTest(fundOptim):
         self.reoptimPeriod = [700,1000,1200]
         self.threshold = 5/100
         self.initDataPoints(0,0,-1,-1)
+        self.priceDf = pd.read_excel(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 
+                                    sheet_name='Price')
     
-    def rebalance(self):
+    def rebalance(self, i):
         """
         Function to rebalance the assets to its original weights
         """
-        for i in range(self.n_var):
-            # the excess sold is used to buy the deficient
-            currentProp = self.assetGrowth[i,0]/np.sum(self.assetGrowth)
-            self.assetGrowth[i,0]-= currentProp - self.weights[i]
+        currentProp = self.assetGrowth/np.sum(self.assetGrowth)
+        buyOrder = (- currentProp + self.weights)*\
+                    np.reshape(np.array(self.priceDf.iloc[i-1, 0:-1]), (self.n_var,1))
+        sellMask = np.where(buyOrder>200, 1, 0)
+        self.assetGrowth-= (currentProp - self.weights)*sellMask
     
     def assetGrowthCalc(self,i):
         """
@@ -88,7 +91,7 @@ class fundOptimTest(fundOptim):
                 if self.rebalPeriod[k]==0:
                     continue
                 elif (self.wb.iloc[i,-1] - self.wb.iloc[endIndex+1,-1]).days >= self.rebalPeriod[k]:
-                    self.rebalance()
+                    self.rebalance(i)
                     
             self.portfolioValue.append(np.sum(self.assetGrowth))
             
@@ -98,5 +101,6 @@ class fundOptimTest(fundOptim):
         print(self.portfolioValue)
         print(self.weights)
 
-test = fundOptimTest(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
-test.test()
+if __name__ == "__main__":
+    test = fundOptimTest(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
+    test.test()

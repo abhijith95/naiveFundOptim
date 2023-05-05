@@ -88,5 +88,7 @@ class fundOptim:
                 finished = True
                 self.weights = self.result.X.reshape([self.n_var,1])
 
-# fo = fundOptim(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
-# fo.optimize(0,0, endIndex=950)
+
+if __name__ == "__main__":
+    fo = fundOptim(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
+    fo.optimize(0,0, endIndex=950)

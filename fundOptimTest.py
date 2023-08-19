@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from fundOptim import fundOptim
+import sys
 
 class fundOptimTest(fundOptim):
     
@@ -68,29 +69,34 @@ class fundOptimTest(fundOptim):
         print("Reoptimize every {} days for return of {}".format(self.reoptimPeriod[argmax],
                                                                 self.portfolioValue[argmax]))
         
-    def test(self):
+    def test(self, testPeriod_index):
         """
         Funtion that sweeps time forward, recording the portfolio value. It 
         also rebalances periodically. Note that the weights of the assets are
         fixed and do not change with time.
+
+        Parameters
+        ----------
+        testPeriod_index : int
+            This is the row index which indicates the last point to be used in the optimization routine.
+
         """
-        endIndex = 2030 # this is approximately beg of 2019
         # running the initial optimization and getting the weights
-        self.optimize(endIndex = endIndex)
+        self.optimize(endIndex = testPeriod_index)
         self.portfolioValue = []
-        print(self.wb.iloc[endIndex+1,-1])
+        print(self.wb.iloc[testPeriod_index+1,-1])
         for k in range(len(self.rebalPeriod)):
             self.assetGrowth = np.ones((self.n_var,1))
             self.assetGrowth*=np.array(self.weights)
             # print(np.sum(self.assetGrowth))
             
-            for i in range(endIndex+1, len(self.wb)):
+            for i in range(testPeriod_index+1, len(self.wb)):
                 # sweeping forward in time.
                 self.assetGrowthCalc(i)                
                 
                 if self.rebalPeriod[k]==0:
                     continue
-                elif (self.wb.iloc[i,-1] - self.wb.iloc[endIndex+1,-1]).days >= self.rebalPeriod[k]:
+                elif (self.wb.iloc[i,-1] - self.wb.iloc[testPeriod_index+1,-1]).days >= self.rebalPeriod[k]:
                     self.rebalance(i)
                     
             self.portfolioValue.append(np.sum(self.assetGrowth))
@@ -102,5 +108,16 @@ class fundOptimTest(fundOptim):
         print(self.weights)
 
 if __name__ == "__main__":
-    test = fundOptimTest(r'C:\Users\abhij\naiveFundOptim\Daily_prices\portfolio.xlsx', 'Percent_change')
-    test.test()
+    """
+    This file takes 3 arguments to work:
+    Excel file name (string): The master excel file which contains the daily percent change of asset price.
+    Sheet name (string): The sheet name which contains the data
+    Index (int): This is the row number which denotes the row index from which algorithm testing should begin
+    
+    Please make sure to have \\ in the address of the excel file
+    """
+    file_name = sys.argv[1]
+    sheet_name = sys.argv[2]
+    index = sys.argv[3]
+    test = fundOptimTest(fileName=file_name, sheetName=sheet_name)
+    test.test(testPeriod_index=index)
